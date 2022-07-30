@@ -2,7 +2,6 @@ import type { AppProps } from 'next/app'
 import { SessionProvider } from 'next-auth/react'
 import { Provider as WagmiProvider } from 'wagmi'
 
-import type { LayoutProps } from '@vercel/examples-ui/layout'
 
 import { getLayout } from '@vercel/examples-ui'
 
