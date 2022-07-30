@@ -3,8 +3,6 @@ import { SessionProvider } from 'next-auth/react'
 import { Provider as WagmiProvider } from 'wagmi'
 
 
-import { getLayout } from '@vercel/examples-ui'
-
 import '@vercel/examples-ui/globals.css'
 
 function App({ Component, pageProps }: AppProps) {
