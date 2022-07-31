@@ -27,29 +27,7 @@ function Home() {
     <Page>
       <section className="flex flex-col space-y-4 gap-6">
         <Text variant="h1">Web3 Sessions with NextAuth.js</Text>
-        <Text>
-          In a decentralized application, a user is often identified by a
-          Cryptocurrency wallet such as{' '}
-          <Link href="https://metamask.io/" target="_blank">
-            Metamask
-          </Link>
-          . However, since Metamask works by injecting a script into the page,
-          it is only available on the client, cutting off the ability to use{' '}
-          <Code>getServerSideProps</Code> to fetch user data.
-        </Text>
-        <Text>
-          We can solve this by pairing a{' '}
-          <Link href="https://next-auth.js.org/" target="_blank">
-            NextAuth.js
-          </Link>{' '}
-          session with a convenient hooks library called{' '}
-          <Link href="https://github.com/tmm/wagmi" target="_blank">
-            WAGMI
-          </Link>
-          . We will need to configure NextAuth.js with the{' '}
-          <Code>CredentialsProvider</Code>:
-        </Text>
-        
+                
         {metamaskInstalled ? (
           <>
             <Text>Try it by logging in!</Text>
