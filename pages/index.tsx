@@ -1,6 +1,3 @@
-import { Layout, Text, Page, Button, Link, Code } from '@vercel/examples-ui'
-import { Snippet } from '../components/Snippet'
-
 import { signIn } from 'next-auth/react'
 import { useConnect, useAccount } from 'wagmi'
 
@@ -52,83 +49,7 @@ function Home() {
           . We will need to configure NextAuth.js with the{' '}
           <Code>CredentialsProvider</Code>:
         </Text>
-        <Snippet>
-          {`import NextAuth from 'next-auth'
-import { utils } from 'ethers'
-import CredentialsProvider from 'next-auth/providers/credentials'
-
-export default NextAuth({
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        address: {
-          label: 'Address',
-          type: 'text',
-          placeholder: '0x0',
-        },
-      },
-      async authorize(credentials) {
-        if (Boolean(utils.getAddress(credentials?.address!))) {
-          return null
-        }
-        return {
-          id: credentials?.address,
-        }
-      },
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET,
-  },
-  callbacks: {
-    async session({ session, token }) {
-      session.address = token.sub
-      return session
-    },
-  },
-  secret: process.env.NEXT_AUTH_SECRET,
-  pages: {
-    signIn: '/',
-    signOut: '/',
-    error: '/',
-    newUser: '/',
-  },
-})
-`}
-        </Snippet>
-        <Text>Doing this will allow us to login users with a session:</Text>
-        <Snippet>{`// NextAuth.js signIn will help us create a session
-import { signIn } from 'next-auth/react'
-// hooks that allow to use metamask informations
-import { useConnect, useAccount } from 'wagmi'
-
-Function Login(){
-  const [{ data: connectData }, connect] = useConnect()
-  const [{ data: accountData }] = useAccount()
-
-  const handleLogin = async () => {
-    try {
-      const callbackUrl = '/protected'
-      if (accountData?.address) {
-        signIn('credentials', { address: accountData.address, callbackUrl })
-        return
-      }
-      const { data, error } = await connect(connectData.connectors[0])
-      if (error) {
-        throw error
-      }
-      signIn('credentials', { address: data?.account, callbackUrl })
-    } catch (error) {
-      window.alert(error)
-    }
-  }
-  ... rest of your component
-`}</Snippet>
-
+        
         {metamaskInstalled ? (
           <>
             <Text>Try it by logging in!</Text>
