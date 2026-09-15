@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
+import Link from 'next/link'
 import { SessionProvider } from 'next-auth/react'
 
 import '../styles/globals.css'
@@ -12,9 +13,9 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <div className="app-shell">
         <header className="app-header">
-          <a className="brand" href="/">
+          <Link className="brand" href="/">
             Web3 Sessions
-          </a>
+          </Link>
           <span className="app-subtitle">Wallet ownership demo</span>
         </header>
         <main className="app-main">
