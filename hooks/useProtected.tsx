@@ -1,27 +1,53 @@
-import { useSession, signOut } from 'next-auth/react'
-import { useEffect } from 'react'
-import { useAccount } from 'wagmi'
-import { usePrevious } from './usePrevious'
+import { signOut, useSession } from 'next-auth/react'
+import { useCallback, useEffect } from 'react'
 
 export function useProtected() {
-  const [{ data: accountData }, disconnect] = useAccount()
-  const session = useSession()
-  const address = accountData?.address
-  const prevAddress = usePrevious(accountData?.address)
+  const { data: session } = useSession()
 
-  const handleSignout = async () => {
+  const handleSignout = useCallback(async () => {
     await signOut({ callbackUrl: '/' })
-    await disconnect()
-  }
+  }, [])
 
   useEffect(() => {
-    if (prevAddress && !address) {
-      handleSignout()
+    const ethereum = window.ethereum
+    const sessionAddress = session?.address?.toLowerCase()
+
+    if (!ethereum?.request || !sessionAddress) {
+      return
     }
-    if (session.status !== 'loading' && !address && prevAddress) {
-      handleSignout()
+
+    let active = true
+
+    const reconcileAccounts = (accounts: string[]) => {
+      if (!active) return
+
+      const connectedAddress = accounts[0]?.toLowerCase()
+      if (!connectedAddress || connectedAddress !== sessionAddress) {
+        void handleSignout()
+      }
     }
-  }, [accountData, address])
+
+    const readCurrentAccounts = async () => {
+      try {
+        const accounts = await ethereum.request?.({ method: 'eth_accounts' })
+        if (Array.isArray(accounts)) {
+          reconcileAccounts(
+            accounts.filter((account): account is string => typeof account === 'string')
+          )
+        }
+      } catch {
+        void handleSignout()
+      }
+    }
+
+    ethereum.on?.('accountsChanged', reconcileAccounts)
+    void readCurrentAccounts()
+
+    return () => {
+      active = false
+      ethereum.removeListener?.('accountsChanged', reconcileAccounts)
+    }
+  }, [handleSignout, session?.address])
 
   return handleSignout
 }
