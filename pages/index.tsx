@@ -1,57 +1,146 @@
-import { signIn } from 'next-auth/react'
-import { useConnect, useAccount } from 'wagmi'
+import { BrowserProvider, getAddress } from 'ethers'
+import { getCsrfToken, signIn } from 'next-auth/react'
+import Link from 'next/link'
+import { useState } from 'react'
+import { buildWalletLoginMessage } from '../lib/wallet-auth'
 
 function Home() {
-  const [{ data: connectData }, connect] = useConnect()
-  const [{ data: accountData }] = useAccount()
-  const metamaskInstalled = connectData.connectors[0].name === 'MetaMask'
+  const [loginError, setLoginError] = useState('')
+  const [isSigningIn, setIsSigningIn] = useState(false)
+
+  const ensureAuthAvailable = async () => {
+    const response = await fetch('/api/auth-status', {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error('Wallet login is temporarily unavailable. Please try again later.')
+    }
+  }
+
+  const requestWalletAddress = async () => {
+    const ethereum = window.ethereum
+    if (!ethereum?.request) {
+      throw new Error('MetaMask is not available in this browser.')
+    }
+
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+    if (
+      !Array.isArray(accounts) ||
+      accounts.length === 0 ||
+      typeof accounts[0] !== 'string'
+    ) {
+      throw new Error('MetaMask did not return a wallet address.')
+    }
+
+    return getAddress(accounts[0])
+  }
+
+  const authenticateWallet = async (address: string) => {
+    await ensureAuthAvailable()
+
+    const nonce = await getCsrfToken()
+    if (!nonce) {
+      throw new Error('Unable to create a secure login challenge.')
+    }
+
+    const ethereum = window.ethereum
+    if (!ethereum) {
+      throw new Error('MetaMask is not available in this browser.')
+    }
+
+    const expectedAddress = getAddress(address)
+    const provider = new BrowserProvider(ethereum)
+    const signer = await provider.getSigner()
+    const signerAddress = getAddress(await signer.getAddress())
+
+    if (signerAddress !== expectedAddress) {
+      throw new Error('The connected wallet changed. Please try again.')
+    }
+
+    const message = buildWalletLoginMessage(expectedAddress, nonce)
+    const signature = await signer.signMessage(message)
+    const result = await signIn('credentials', {
+      address: expectedAddress,
+      message,
+      signature,
+      nonce,
+      callbackUrl: '/protected',
+      redirect: false,
+    })
+
+    if (!result || result.error) {
+      throw new Error('Wallet signature could not be verified.')
+    }
+
+    if (result.url) {
+      window.location.assign(result.url)
+    }
+  }
 
   const handleLogin = async () => {
+    if (isSigningIn) return
+
+    setLoginError('')
+    setIsSigningIn(true)
+
     try {
-      const callbackUrl = '/protected'
-      if (accountData?.address) {
-        signIn('credentials', { address: accountData.address, callbackUrl })
-        return
-      }
-      const { data, error } = await connect(connectData.connectors[0])
-      if (error) {
-        throw error
-      }
-      signIn('credentials', { address: data?.account, callbackUrl })
+      const address = await requestWalletAddress()
+      await authenticateWallet(address)
     } catch (error) {
-      window.alert(error)
+      setLoginError(
+        error instanceof Error ? error.message : 'Wallet login failed.'
+      )
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
   return (
-    <Page>
-      <section className="flex flex-col space-y-4 gap-6">
-        <Text variant="h1">Web3 Sessions with NextAuth.js</Text>
-                
-        {metamaskInstalled ? (
-          <>
-            <Text>Try it by logging in!</Text>
-            <Button onClick={handleLogin}>Login</Button>
-          </>
-        ) : (
-          <>
-            <Text>
-              {' '}
-              Please install{' '}
-              <Link href="https://metamask.io/" target="_blank">
-                Metamask
-              </Link>{' '}
-              to use this example.
-            </Text>
-          </>
-        )}
-      </section>
+    <section className="card stack" aria-labelledby="wallet-login-title">
+      <h1 id="wallet-login-title" className="page-title">
+        Sign in with your wallet
+      </h1>
+      <p className="body-copy">
+        Connect MetaMask and sign a login challenge. The server verifies the
+        signature before creating a session for that wallet address.
+      </p>
+      <p className="info-note">
+        Signing in does not create a blockchain transaction and does not request
+        permission to move funds.
+      </p>
 
-      <hr className="border-t border-accents-2 my-6" />
-    </Page>
+      <button
+        type="button"
+        className="primary-button"
+        onClick={handleLogin}
+        disabled={isSigningIn}
+        aria-busy={isSigningIn}
+      >
+        {isSigningIn ? 'Waiting for signature…' : 'Login with MetaMask'}
+      </button>
+
+      <p className="body-copy">
+        MetaMask not installed? Get it from the{' '}
+        <Link
+          className="inline-link"
+          href="https://metamask.io/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          official MetaMask site
+        </Link>
+        .
+      </p>
+
+      {loginError ? (
+        <p role="alert" className="error-message">
+          {loginError}
+        </p>
+      ) : null}
+    </section>
   )
 }
-
-Home.Layout = Layout
 
 export default Home

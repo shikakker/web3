@@ -1,25 +1,28 @@
 import type { AppProps } from 'next/app'
+import Head from 'next/head'
+import Link from 'next/link'
 import { SessionProvider } from 'next-auth/react'
-import { Provider as WagmiProvider } from 'wagmi'
 
-
-import '@vercel/examples-ui/globals.css'
+import '../styles/globals.css'
 
 function App({ Component, pageProps }: AppProps) {
-  const Layout = getLayout<LayoutProps>(Component)
-
   return (
-    <WagmiProvider autoConnect>
-      <SessionProvider session={pageProps.session}>
-        <Layout
-          title="Web3 Sessions with NextAuth.js"
-          path="solutions/web3-sessions"
-          description="Learn how to do Web3 sessions with NextAuth.js"
-        >
+    <SessionProvider session={pageProps.session}>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      <div className="app-shell">
+        <header className="app-header">
+          <Link className="brand" href="/">
+            Web3 Sessions
+          </Link>
+          <span className="app-subtitle">Wallet ownership demo</span>
+        </header>
+        <main className="app-main">
           <Component {...pageProps} />
-        </Layout>
-      </SessionProvider>
-    </WagmiProvider>
+        </main>
+      </div>
+    </SessionProvider>
   )
 }
 
