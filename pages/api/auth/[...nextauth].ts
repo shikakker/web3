@@ -2,13 +2,10 @@ import { getAddress, verifyMessage } from 'ethers'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { isAuthConfigured } from '../../../lib/auth-config'
 import { buildWalletLoginMessage } from '../../../lib/wallet-auth'
 
-const authConfigured = Boolean(
-  process.env.NEXT_AUTH_SECRET && process.env.JWT_SECRET
-)
-
-const authHandler = authConfigured
+const authHandler = isAuthConfigured()
   ? NextAuth({
       providers: [
         CredentialsProvider({
