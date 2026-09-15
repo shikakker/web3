@@ -1,4 +1,4 @@
-import { providers, utils } from 'ethers'
+import { BrowserProvider, getAddress } from 'ethers'
 import { getCsrfToken, signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -23,7 +23,7 @@ function Home() {
       throw new Error('MetaMask did not return a wallet address.')
     }
 
-    return utils.getAddress(accounts[0])
+    return getAddress(accounts[0])
   }
 
   const authenticateWallet = async (address: string) => {
@@ -37,10 +37,10 @@ function Home() {
       throw new Error('MetaMask is not available in this browser.')
     }
 
-    const expectedAddress = utils.getAddress(address)
-    const provider = new providers.Web3Provider(ethereum)
-    const signer = provider.getSigner()
-    const signerAddress = utils.getAddress(await signer.getAddress())
+    const expectedAddress = getAddress(address)
+    const provider = new BrowserProvider(ethereum)
+    const signer = await provider.getSigner()
+    const signerAddress = getAddress(await signer.getAddress())
 
     if (signerAddress !== expectedAddress) {
       throw new Error('The connected wallet changed. Please try again.')
