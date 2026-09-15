@@ -12,7 +12,7 @@ test('credentials auth requires a signed wallet proof instead of address-only lo
   assert.match(auth, /signature/)
   assert.match(auth, /message/)
   assert.match(auth, /nonce/)
-  assert.match(auth, /utils\.verifyMessage/)
+  assert.match(auth, /\bverifyMessage\(/)
   assert.match(auth, /buildWalletLoginMessage/)
 })
 
