@@ -1,7 +1,8 @@
 import { providers, utils } from 'ethers'
 import { getCsrfToken, signIn } from 'next-auth/react'
+import Link from 'next/link'
 import { useState } from 'react'
-import { useConnect, useAccount } from 'wagmi'
+import { useAccount, useConnect } from 'wagmi'
 import { buildWalletLoginMessage } from '../lib/wallet-auth'
 
 declare global {
@@ -95,44 +96,46 @@ function Home() {
   }
 
   return (
-    <Page>
-      <section className="flex flex-col space-y-4 gap-6">
-        <Text variant="h1">Web3 Sessions with NextAuth.js</Text>
+    <section className="card stack" aria-labelledby="wallet-login-title">
+      <h1 id="wallet-login-title" className="page-title">
+        Sign in with your wallet
+      </h1>
+      <p className="body-copy">
+        Connect MetaMask and sign a one-time login message. The server verifies
+        the signature before creating a session for that wallet address.
+      </p>
+      <p className="info-note">
+        Signing in does not create a blockchain transaction and does not request
+        permission to move funds.
+      </p>
 
-        {metamaskInstalled ? (
-          <>
-            <Text>
-              Connect MetaMask and sign a login message to prove wallet
-              ownership. This does not create a blockchain transaction.
-            </Text>
-            <Button onClick={handleLogin} disabled={isSigningIn}>
-              {isSigningIn ? 'Waiting for signature…' : 'Login with MetaMask'}
-            </Button>
-            {loginError ? (
-              <p role="alert" className="text-red-600">
-                {loginError}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <Text>
-              {' '}
-              Please install{' '}
-              <Link href="https://metamask.io/" target="_blank">
-                MetaMask
-              </Link>{' '}
-              to use this example.
-            </Text>
-          </>
-        )}
-      </section>
+      {metamaskInstalled ? (
+        <button
+          type="button"
+          className="primary-button"
+          onClick={handleLogin}
+          disabled={isSigningIn}
+          aria-busy={isSigningIn}
+        >
+          {isSigningIn ? 'Waiting for signature…' : 'Login with MetaMask'}
+        </button>
+      ) : (
+        <p className="body-copy">
+          MetaMask was not detected. Install it from the{' '}
+          <Link className="inline-link" href="https://metamask.io/" target="_blank" rel="noreferrer">
+            official MetaMask site
+          </Link>{' '}
+          and reload this page.
+        </p>
+      )}
 
-      <hr className="border-t border-accents-2 my-6" />
-    </Page>
+      {loginError ? (
+        <p role="alert" className="error-message">
+          {loginError}
+        </p>
+      ) : null}
+    </section>
   )
 }
-
-Home.Layout = Layout
 
 export default Home
