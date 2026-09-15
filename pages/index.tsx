@@ -2,25 +2,29 @@ import { providers, utils } from 'ethers'
 import { getCsrfToken, signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { useAccount, useConnect } from 'wagmi'
 import { buildWalletLoginMessage } from '../lib/wallet-auth'
 
-declare global {
-  interface Window {
-    ethereum?: providers.ExternalProvider
-  }
-}
-
 function Home() {
-  const [{ data: connectData }, connect] = useConnect()
-  const [{ data: accountData }] = useAccount()
   const [loginError, setLoginError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
 
-  const metamaskConnector = connectData.connectors.find(
-    (connector) => connector.name === 'MetaMask'
-  )
-  const metamaskInstalled = Boolean(metamaskConnector)
+  const requestWalletAddress = async () => {
+    const ethereum = window.ethereum
+    if (!ethereum?.request) {
+      throw new Error('MetaMask is not available in this browser.')
+    }
+
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+    if (
+      !Array.isArray(accounts) ||
+      accounts.length === 0 ||
+      typeof accounts[0] !== 'string'
+    ) {
+      throw new Error('MetaMask did not return a wallet address.')
+    }
+
+    return utils.getAddress(accounts[0])
+  }
 
   const authenticateWallet = async (address: string) => {
     const nonce = await getCsrfToken()
@@ -28,12 +32,13 @@ function Home() {
       throw new Error('Unable to create a secure login challenge.')
     }
 
-    if (!window.ethereum) {
+    const ethereum = window.ethereum
+    if (!ethereum) {
       throw new Error('MetaMask is not available in this browser.')
     }
 
     const expectedAddress = utils.getAddress(address)
-    const provider = new providers.Web3Provider(window.ethereum)
+    const provider = new providers.Web3Provider(ethereum)
     const signer = provider.getSigner()
     const signerAddress = utils.getAddress(await signer.getAddress())
 
@@ -68,24 +73,8 @@ function Home() {
     setIsSigningIn(true)
 
     try {
-      if (accountData?.address) {
-        await authenticateWallet(accountData.address)
-        return
-      }
-
-      if (!metamaskConnector) {
-        throw new Error('MetaMask is not available in this browser.')
-      }
-
-      const { data, error } = await connect(metamaskConnector)
-      if (error) {
-        throw error
-      }
-      if (!data?.account) {
-        throw new Error('MetaMask did not return a wallet address.')
-      }
-
-      await authenticateWallet(data.account)
+      const address = await requestWalletAddress()
+      await authenticateWallet(address)
     } catch (error) {
       setLoginError(
         error instanceof Error ? error.message : 'Wallet login failed.'
@@ -109,25 +98,28 @@ function Home() {
         permission to move funds.
       </p>
 
-      {metamaskInstalled ? (
-        <button
-          type="button"
-          className="primary-button"
-          onClick={handleLogin}
-          disabled={isSigningIn}
-          aria-busy={isSigningIn}
+      <button
+        type="button"
+        className="primary-button"
+        onClick={handleLogin}
+        disabled={isSigningIn}
+        aria-busy={isSigningIn}
+      >
+        {isSigningIn ? 'Waiting for signature…' : 'Login with MetaMask'}
+      </button>
+
+      <p className="body-copy">
+        MetaMask not installed? Get it from the{' '}
+        <Link
+          className="inline-link"
+          href="https://metamask.io/"
+          target="_blank"
+          rel="noreferrer"
         >
-          {isSigningIn ? 'Waiting for signature…' : 'Login with MetaMask'}
-        </button>
-      ) : (
-        <p className="body-copy">
-          MetaMask was not detected. Install it from the{' '}
-          <Link className="inline-link" href="https://metamask.io/" target="_blank" rel="noreferrer">
-            official MetaMask site
-          </Link>{' '}
-          and reload this page.
-        </p>
-      )}
+          official MetaMask site
+        </Link>
+        .
+      </p>
 
       {loginError ? (
         <p role="alert" className="error-message">
