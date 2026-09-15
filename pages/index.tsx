@@ -8,6 +8,17 @@ function Home() {
   const [loginError, setLoginError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
 
+  const ensureAuthAvailable = async () => {
+    const response = await fetch('/api/auth-status', {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error('Wallet login is temporarily unavailable. Please try again later.')
+    }
+  }
+
   const requestWalletAddress = async () => {
     const ethereum = window.ethereum
     if (!ethereum?.request) {
@@ -27,6 +38,8 @@ function Home() {
   }
 
   const authenticateWallet = async (address: string) => {
+    await ensureAuthAvailable()
+
     const nonce = await getCsrfToken()
     if (!nonce) {
       throw new Error('Unable to create a secure login challenge.')
@@ -90,8 +103,8 @@ function Home() {
         Sign in with your wallet
       </h1>
       <p className="body-copy">
-        Connect MetaMask and sign a one-time login message. The server verifies
-        the signature before creating a session for that wallet address.
+        Connect MetaMask and sign a login challenge. The server verifies the
+        signature before creating a session for that wallet address.
       </p>
       <p className="info-note">
         Signing in does not create a blockchain transaction and does not request
