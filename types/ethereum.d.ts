@@ -1,6 +1,6 @@
-import type { providers } from 'ethers'
+import type { Eip1193Provider } from 'ethers'
 
-interface InjectedEthereumProvider extends providers.ExternalProvider {
+interface InjectedEthereumProvider extends Eip1193Provider {
   on?: (
     event: 'accountsChanged',
     listener: (accounts: string[]) => void,
