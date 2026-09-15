@@ -1,5 +1,5 @@
+import { getAddress, verifyMessage } from 'ethers'
 import NextAuth from 'next-auth'
-import { utils } from 'ethers'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { buildWalletLoginMessage } from '../../../lib/wallet-auth'
 
@@ -28,7 +28,7 @@ export default NextAuth({
       },
       async authorize(credentials, req) {
         try {
-          const address = utils.getAddress(credentials?.address ?? '')
+          const address = getAddress(credentials?.address ?? '')
           const message = credentials?.message ?? ''
           const signature = credentials?.signature ?? ''
           const nonce = credentials?.nonce ?? ''
@@ -44,9 +44,7 @@ export default NextAuth({
             return null
           }
 
-          const recoveredAddress = utils.getAddress(
-            utils.verifyMessage(message, signature)
-          )
+          const recoveredAddress = getAddress(verifyMessage(message, signature))
 
           if (recoveredAddress !== address) {
             return null
