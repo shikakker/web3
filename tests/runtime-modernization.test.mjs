@@ -11,6 +11,10 @@ const protectedHook = await readFile(
   new URL('../hooks/useProtected.tsx', import.meta.url),
   'utf8',
 )
+const nextConfig = await readFile(
+  new URL('../next.config.js', import.meta.url),
+  'utf8',
+)
 
 test('runtime uses the maintained Next/React/Node boundary', () => {
   assert.equal(packageJson.dependencies.next, '15.5.25')
@@ -22,6 +26,7 @@ test('runtime uses the maintained Next/React/Node boundary', () => {
 test('legacy Vercel examples UI is removed from the production dependency graph', () => {
   assert.equal(packageJson.dependencies['@vercel/examples-ui'], undefined)
   assert.doesNotMatch(app, /@vercel\/examples-ui/)
+  assert.doesNotMatch(nextConfig, /@vercel\/examples-ui/)
   assert.match(app, /styles\/globals\.css/)
 })
 
